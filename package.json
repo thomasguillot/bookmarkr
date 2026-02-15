@@ -1,0 +1,35 @@
+{
+	"name": "bookmarkr",
+	"version": "1.0.0",
+	"license": "GPL-3.0-only",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "vite build",
+		"build:icons": "node scripts/build-icons.js",
+		"lint": "eslint . && npm run lint:html",
+		"lint:fix": "eslint . --fix",
+		"lint:html": "html-validate src/**/*.html",
+		"prebuild": "npm run build:icons",
+		"release": "node scripts/release-zip.js"
+	},
+	"dependencies": {
+		"@chakra-ui/react": "^3.2.2",
+		"@emotion/react": "^11.13.3",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.15.0",
+		"@vitejs/plugin-react": "^4.3.3",
+		"archiver": "^7.0.1",
+		"eslint": "^9.15.0",
+		"eslint-plugin-react": "^7.37.2",
+		"eslint-plugin-react-hooks": "^5.0.0",
+		"eslint-plugin-react-refresh": "^0.4.14",
+		"globals": "^15.12.0",
+		"html-validate": "^8.25.0",
+		"sharp": "^0.33.5",
+		"vite": "^6.0.1"
+	}
+}

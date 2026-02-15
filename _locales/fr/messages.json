@@ -1,0 +1,49 @@
+{
+	"extensionName": {
+		"message": "Bookmarkr",
+		"description": "Extension name (store, toolbar)"
+	},
+	"extensionDescription": {
+		"message": "Exporte automatiquement des sauvegardes de favoris en HTML lorsque les favoris changent.",
+		"description": "Short description for the Chrome Web Store and extension management"
+	},
+	"exportManually": {
+		"message": "Exporter maintenant",
+		"description": "Button label to trigger a one-time export"
+	},
+	"exporting": {
+		"message": "Export en cours…",
+		"description": "Button label while export is in progress"
+	},
+	"exported": {
+		"message": "Exporté",
+		"description": "Button label after successful export"
+	},
+	"exportFailed": {
+		"message": "Échec de l'export",
+		"description": "Generic error when export fails"
+	},
+	"exportFailedMessage": {
+		"message": "Échec de l'export : $1",
+		"description": "Error message with detail",
+		"placeholders": {
+			"detail": { "content": "$1" }
+		}
+	},
+	"autoExport": {
+		"message": "Export auto",
+		"description": "Switch label for automatic export on bookmark changes"
+	},
+	"autoExportHelp": {
+		"message": "Sauvegarde dans Téléchargements à chaque changement de favoris. Désactivé = export manuel uniquement.",
+		"description": "Helper text under the Auto-export switch"
+	},
+	"errorNoResponse": {
+		"message": "Pas de réponse. Rechargez l’extension et réessayez.",
+		"description": "Error when background does not respond"
+	},
+	"errorCouldNotGetBookmarks": {
+		"message": "Impossible d’obtenir les favoris",
+		"description": "Error when bookmark tree cannot be retrieved"
+	}
+}

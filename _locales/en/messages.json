@@ -1,0 +1,49 @@
+{
+	"extensionName": {
+		"message": "Bookmarkr",
+		"description": "Extension name (store, toolbar)"
+	},
+	"extensionDescription": {
+		"message": "Automatically export bookmark backups in HTML when bookmarks change.",
+		"description": "Short description for the Chrome Web Store and extension management"
+	},
+	"exportManually": {
+		"message": "Export manually",
+		"description": "Button label to trigger a one-time export"
+	},
+	"exporting": {
+		"message": "Exporting…",
+		"description": "Button label while export is in progress"
+	},
+	"exported": {
+		"message": "Exported",
+		"description": "Button label after successful export"
+	},
+	"exportFailed": {
+		"message": "Export failed",
+		"description": "Generic error when export fails"
+	},
+	"exportFailedMessage": {
+		"message": "Export failed: $1",
+		"description": "Error message with detail",
+		"placeholders": {
+			"detail": { "content": "$1" }
+		}
+	},
+	"autoExport": {
+		"message": "Auto-export",
+		"description": "Switch label for automatic export on bookmark changes"
+	},
+	"autoExportHelp": {
+		"message": "Backup to Downloads when bookmarks change. Off = manual export only.",
+		"description": "Helper text under the Auto-export switch"
+	},
+	"errorNoResponse": {
+		"message": "No response. Reload the extension and try again.",
+		"description": "Error when background does not respond"
+	},
+	"errorCouldNotGetBookmarks": {
+		"message": "Could not get bookmarks",
+		"description": "Error when bookmark tree cannot be retrieved"
+	}
+}

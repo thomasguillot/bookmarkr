@@ -1,0 +1,9 @@
+{
+	"extends": ["html-validate:recommended"],
+	"elements": ["html5"],
+	"rules": {
+		"require-sri": "off",
+		"attr-quotes": "error",
+		"no-trailing-whitespace": "warn"
+	}
+}

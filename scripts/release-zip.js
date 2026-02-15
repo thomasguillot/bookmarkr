@@ -1,0 +1,53 @@
+/**
+ * Builds the extension and creates a zip for distribution (e.g. GitHub Releases).
+ * Output: bookmarkr-<version>.zip with manifest, service worker, build/, icons/, _locales/.
+ */
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import archiver from "archiver";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.join(__dirname, "..");
+
+const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
+const version = manifest.version || "0.0.0";
+const zipName = `bookmarkr-${version}.zip`;
+const zipPath = path.join(root, zipName);
+
+// Build first
+execSync("npm run build", { cwd: root, stdio: "inherit" });
+
+const output = fs.createWriteStream(zipPath);
+const archive = archiver("zip", { zlib: { level: 9 } });
+
+const done = new Promise((resolve, reject) => {
+	output.on("close", () => {
+		console.log(`Created ${zipName} (${Math.round(archive.pointer() / 1024)} KB)`);
+		resolve();
+	});
+	archive.on("error", reject);
+	output.on("error", reject);
+});
+
+archive.pipe(output);
+
+const files = ["manifest.json", "service-worker.js"];
+for (const f of files) {
+	const full = path.join(root, f);
+	if (fs.existsSync(full)) {
+		archive.file(full, { name: f });
+	}
+}
+
+const dirs = ["build", "icons", "_locales"];
+for (const d of dirs) {
+	const full = path.join(root, d);
+	if (fs.existsSync(full)) {
+		archive.directory(full, d);
+	}
+}
+
+archive.finalize();
+await done;

@@ -25,6 +25,13 @@ function Bookmarkr() {
 		chrome.storage.sync.get("autoExport", (data) => {
 			setAutoExport(data.autoExport !== false);
 		});
+		const media = window.matchMedia("(prefers-color-scheme: dark)");
+		const updateIcon = () => {
+			chrome.runtime.sendMessage(media.matches ? "setIconTheme:dark" : "setIconTheme:light");
+		};
+		updateIcon();
+		media.addEventListener("change", updateIcon);
+		return () => media.removeEventListener("change", updateIcon);
 	}, []);
 
 	const handleAutoExportChange = (e) => {

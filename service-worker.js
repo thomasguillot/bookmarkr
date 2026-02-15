@@ -7,6 +7,25 @@
 const EXPORT_DEBOUNCE_MS = 500;
 let exportTimeout = null;
 
+const ICON_PATHS = {
+	light: { 16: "icons/icon16-dark.png", 48: "icons/icon48-dark.png", 128: "icons/icon128-dark.png" },
+	dark: { 16: "icons/icon16-light.png", 48: "icons/icon48-light.png", 128: "icons/icon128-light.png" },
+};
+
+function applyIconTheme(theme) {
+	const path = theme === "dark" ? ICON_PATHS.dark : ICON_PATHS.light;
+	chrome.action.setIcon({ path });
+}
+
+function initIconTheme() {
+	chrome.storage.local.get("iconTheme", (data) => {
+		applyIconTheme(data.iconTheme || "light");
+	});
+}
+
+chrome.runtime.onInstalled.addListener(initIconTheme);
+initIconTheme();
+
 const DANGEROUS_URL_PREFIXES = [
 	"javascript:",
 	"vbscript:",
@@ -146,6 +165,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 			}
 		})();
 		return true;
+	}
+	if (msg.startsWith("setIconTheme:")) {
+		const theme = msg.slice("setIconTheme:".length);
+		if (theme === "light" || theme === "dark") {
+			chrome.storage.local.set({ iconTheme: theme });
+			applyIconTheme(theme);
+		}
+		sendResponse({ ok: true });
+		return false;
 	}
 	return false;
 });

@@ -1,11 +1,8 @@
 /**
  * Bookmarkr – service worker (runs in background).
- * Listens for bookmark events, handles messages from popup.
+ * Handles messages from popup (get bookmarks HTML, icon theme).
  * Security: message validation, sender check, URL sanitization, HTML escaping.
  */
-
-const EXPORT_DEBOUNCE_MS = 500;
-let exportTimeout = null;
 
 const ICON_PATHS = {
 	light: { 16: "icons/icon16-dark.png", 48: "icons/icon48-dark.png", 128: "icons/icon128-dark.png" },
@@ -43,6 +40,25 @@ function escapeHtml(text) {
 		.replace(/"/g, '&quot;');
 }
 
+function escapeMarkdown(text) {
+	if (!text) return '';
+	return String(text)
+		.replace(/\\/g, '\\\\')
+		.replace(/`/g, '\\`')
+		.replace(/\*/g, '\\*')
+		.replace(/_/g, '\\_')
+		.replace(/{/g, '\\{')
+		.replace(/}/g, '\\}')
+		.replace(/\[/g, '\\[')
+		.replace(/]/g, '\\]')
+		.replace(/\(/g, '\\(')
+		.replace(/\)/g, '\\)')
+		.replace(/#/g, '\\#')
+		.replace(/\+/g, '\\+')
+		.replace(/-/g, '\\-')
+		.replace(/\!/g, '\\!');
+}
+
 function sanitizeBookmarkUrl(url) {
 	if (!url || typeof url !== "string") return "#";
 	const trimmed = url.trim().toLowerCase();
@@ -58,6 +74,18 @@ function unixTime(ms) {
 	return ms ? Math.floor(ms / 1000) : Math.floor(Date.now() / 1000);
 }
 
+function nodeHasBookmark(node) {
+	if (!node) return false;
+	if (node.url) return true;
+	if (!node.children || !node.children.length) return false;
+	for (const child of node.children) {
+		if (nodeHasBookmark(child)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 function nodeToNetscapeHtml(node) {
 	if (!node) return '';
 	if (node.url) {
@@ -67,6 +95,9 @@ function nodeToNetscapeHtml(node) {
 		return `<DT><A HREF="${escapeHtml(safeUrl)}" ADD_DATE="${addDate}" LAST_MODIFIED="${modified}">${escapeHtml(node.title || '')}</A>\n`;
 	}
 	// Folder
+	if (!nodeHasBookmark(node)) {
+		return '';
+	}
 	const addDate = unixTime(node.dateGroupModified || node.dateAdded);
 	let out = `<DT><H3 ADD_DATE="${addDate}"${node.children?.length ? '' : ' FOLDED'}>${escapeHtml(node.title || '')}</H3>\n<DL><p>\n`;
 	if (node.children?.length) {
@@ -89,56 +120,84 @@ function buildBookmarksHtml(tree) {
 <h1>Bookmarks</h1>
 <dl><p>
 `;
-	let body = '';
+	let topNodes = [];
 	for (const root of tree) {
 		if (root && root.children && root.children.length) {
 			for (const node of root.children) {
-				body += nodeToNetscapeHtml(node);
+				if (node.url || nodeHasBookmark(node)) {
+					topNodes.push(node);
+				}
 			}
+		}
+	}
+	let body = '';
+	if (topNodes.length === 1 && !topNodes[0].url) {
+		const folder = topNodes[0];
+		if (folder.children && folder.children.length) {
+			for (const child of folder.children) {
+				if (child.url || nodeHasBookmark(child)) {
+					body += nodeToNetscapeHtml(child);
+				}
+			}
+		}
+	} else {
+		for (const node of topNodes) {
+			body += nodeToNetscapeHtml(node);
 		}
 	}
 	return header + body + '</dl><p>\n';
 }
 
-function exportBookmarks() {
-	return new Promise((resolve, reject) => {
-		chrome.bookmarks.getTree().then((tree) => {
-			const html = buildBookmarksHtml(tree);
-			const url = "data:text/html;charset=utf-8," + encodeURIComponent(html);
-			const now = new Date();
-			const date = now.toISOString().slice(0, 10);
-			const time = now.toISOString().slice(11, 19).replace(/:/g, "-");
-			const filename = `bookmarks-${date}-${time}.html`;
-			chrome.downloads.download(
-				{ url, filename, saveAs: false, conflictAction: "overwrite" },
-				() => {
-					const err = chrome.runtime.lastError;
-					if (err) {
-						reject(new Error(err.message));
-					} else {
-						resolve();
-					}
+function nodeToMarkdown(node, depth) {
+	if (!node) return '';
+	const indent = '  '.repeat(depth);
+	if (node.url) {
+		const safeUrl = sanitizeBookmarkUrl(node.url);
+		const title = node.title || safeUrl || '';
+		return `${indent}- [${escapeMarkdown(title)}](${escapeMarkdown(safeUrl)})\n`;
+	}
+	if (!nodeHasBookmark(node)) {
+		return '';
+	}
+	const title = node.title || '';
+	let out = `${indent}- ${escapeMarkdown(title)}\n`;
+	if (node.children?.length) {
+		for (const child of node.children) {
+			out += nodeToMarkdown(child, depth + 1);
+		}
+	}
+	return out;
+}
+
+function buildBookmarksMarkdown(tree) {
+	if (!Array.isArray(tree)) return '';
+	let topNodes = [];
+	for (const root of tree) {
+		if (root && root.children && root.children.length) {
+			for (const node of root.children) {
+				if (node.url || nodeHasBookmark(node)) {
+					topNodes.push(node);
 				}
-			);
-		}).catch(reject);
-	});
-}
-
-function scheduleExport() {
-	if (exportTimeout) clearTimeout(exportTimeout);
-	exportTimeout = setTimeout(() => {
-		chrome.storage.sync.get("autoExport", (data) => {
-			if (data.autoExport !== false) {
-				exportBookmarks();
 			}
-		});
-	}, EXPORT_DEBOUNCE_MS);
+		}
+	}
+	let body = '';
+	if (topNodes.length === 1 && !topNodes[0].url) {
+		const folder = topNodes[0];
+		if (folder.children && folder.children.length) {
+			for (const child of folder.children) {
+				if (child.url || nodeHasBookmark(child)) {
+					body += nodeToMarkdown(child, 0);
+				}
+			}
+		}
+	} else {
+		for (const node of topNodes) {
+			body += nodeToMarkdown(node, 0);
+		}
+	}
+	return '# Bookmarks\n\n' + body;
 }
-
-chrome.bookmarks.onCreated.addListener(scheduleExport);
-chrome.bookmarks.onRemoved.addListener(scheduleExport);
-chrome.bookmarks.onChanged.addListener(scheduleExport);
-chrome.bookmarks.onMoved.addListener(scheduleExport);
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 	if (typeof msg !== "string") {
@@ -148,18 +207,24 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 		sendResponse({ ok: false, error: "Unauthorized" });
 		return false;
 	}
-	if (msg === "exportNow") {
-		exportBookmarks()
-			.then(() => sendResponse({ ok: true }))
-			.catch((err) => sendResponse({ ok: false, error: String(err) }));
-		return true;
-	}
 	if (msg === "getBookmarksHtml") {
 		(async () => {
 			try {
 				const tree = await chrome.bookmarks.getTree();
 				const html = buildBookmarksHtml(tree);
 				sendResponse({ ok: true, html });
+			} catch (err) {
+				sendResponse({ ok: false, error: String(err && err.message ? err.message : err) });
+			}
+		})();
+		return true;
+	}
+	if (msg === "getBookmarksMarkdown") {
+		(async () => {
+			try {
+				const tree = await chrome.bookmarks.getTree();
+				const markdown = buildBookmarksMarkdown(tree);
+				sendResponse({ ok: true, markdown });
 			} catch (err) {
 				sendResponse({ ok: false, error: String(err && err.message ? err.message : err) });
 			}

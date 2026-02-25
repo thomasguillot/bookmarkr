@@ -1,10 +1,15 @@
 {
 	"manifest_version": 3,
 	"name": "__MSG_extensionName__",
-	"version": "1.0.1",
+	"version": "2.0.0",
 	"description": "__MSG_extensionDescription__",
 	"default_locale": "en",
-	"permissions": ["bookmarks", "downloads", "storage"],
+	"permissions": ["bookmarks", "downloads", "storage", "identity"],
+	"optional_host_permissions": ["https://www.googleapis.com/*"],
+	"oauth2": {
+		"client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+		"scopes": ["https://www.googleapis.com/auth/drive.file"]
+	},
 	"background": {
 		"service_worker": "service-worker.js"
 	},

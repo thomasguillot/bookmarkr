@@ -4,3 +4,6 @@
 node_modules/
 build/
 *.zip
+.worktrees/
+docs/superpowers/
+*.tsbuildinfo

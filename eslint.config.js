@@ -1,13 +1,15 @@
 import js from "@eslint/js";
+import tseslint from "typescript-eslint";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 
-export default [
+export default tseslint.config(
 	js.configs.recommended,
+	...tseslint.configs.recommended,
 	{
-		files: ["**/*.{js,jsx}"],
+		files: ["**/*.{js,jsx,ts,tsx}"],
 		languageOptions: {
 			ecmaVersion: "latest",
 			globals: { ...globals.browser, chrome: "readonly" },
@@ -32,12 +34,12 @@ export default [
 		},
 	},
 	{
-		files: ["scripts/**/*.js"],
+		files: ["scripts/**/*.{js,ts}"],
 		languageOptions: {
 			globals: { ...globals.node },
 		},
 	},
 	{
-		ignores: ["build/", "node_modules/", "icons/*.png", "*.config.js"],
+		ignores: ["build/", "node_modules/", "icons/*.png", "*.config.js", "*.config.ts"],
 	},
-];
+);

@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.0.0]
+
+- **Local-only export**: Removed the Google Drive integration. Bookmarkr now saves exports to your Chrome Downloads folder only.
+- **Two export buttons**: Replaced the single **Export** button (with a dropdown for HTML/Markdown) with two explicit buttons — **Export as HTML** and **Export as Markdown** — to make the choice clearer and avoid dropdown positioning issues inside the Chrome popup.
+- **System theme**: The popup now follows your system light/dark theme automatically.
+- **UI refresh**: Rebuilt the popup with Tailwind + shadcn for a cleaner, more native look.
+- **Codebase**: Migrated the popup and service worker to TypeScript.
+- **Icon behavior**: Single #101010 icon by default, switches to a version with a white rounded background while exporting.
+
 ## [2.0.0]
 
 - **Manual export only**: Removed auto-export; export runs only when you click **Export**.
@@ -13,4 +22,4 @@
 
 ## [1.0.0]
 
-Initial release.
+- Initial release.

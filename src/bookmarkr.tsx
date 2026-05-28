@@ -1,8 +1,10 @@
 import { Component, useEffect, useState, type ReactNode } from "react";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Toaster } from "@/components/ui/sonner";
 
 interface BookmarksHtmlResponse {
 	ok: boolean;
@@ -83,16 +85,10 @@ function timestampedFilename(extension: "html" | "md"): string {
 
 function Bookmarkr(): React.ReactElement {
 	const [exporting, setExporting] = useState<boolean>(false);
-	const [statusLabel, setStatusLabel] = useState<string>("");
 
 	useEffect(() => {
 		document.title = t("extensionName");
 	}, []);
-
-	const flashStatus = (label: string): void => {
-		setStatusLabel(label);
-		setTimeout(() => setStatusLabel(""), 3000);
-	};
 
 	const getBookmarksHtmlContent = async (): Promise<string> => {
 		const res = await Promise.race<BookmarksHtmlResponse | undefined>([
@@ -130,7 +126,7 @@ function Bookmarkr(): React.ReactElement {
 		return res.markdown;
 	};
 
-	const downloadBlob = (filename: string, blob: Blob): void => {
+	const downloadBlob = (filename: string, blob: Blob, toastId: string | number): void => {
 		const url = URL.createObjectURL(blob);
 		chrome.downloads.download(
 			{ url, filename, saveAs: false, conflictAction: "overwrite" },
@@ -138,7 +134,11 @@ function Bookmarkr(): React.ReactElement {
 				URL.revokeObjectURL(url);
 				const err = chrome.runtime.lastError;
 				setExporting(false);
-				flashStatus(err ? t("exportFailedMessage", [err.message ?? ""]) : t("exported"));
+				if (err) {
+					toast.error(t("exportFailedMessage", [err.message ?? ""]), { id: toastId });
+				} else {
+					toast.success(t("exported"), { id: toastId });
+				}
 				chrome.runtime.sendMessage("setIconState:idle");
 			},
 		);
@@ -146,32 +146,32 @@ function Bookmarkr(): React.ReactElement {
 
 	const exportLocalHtml = async (): Promise<void> => {
 		setExporting(true);
-		setStatusLabel(t("exporting"));
+		const toastId = toast.loading(t("exporting"));
 		chrome.runtime.sendMessage("setIconState:exporting");
 		try {
 			const html = await getBookmarksHtmlContent();
 			const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-			downloadBlob(timestampedFilename("html"), blob);
+			downloadBlob(timestampedFilename("html"), blob, toastId);
 		} catch (err) {
 			setExporting(false);
 			const msg = err instanceof Error ? err.message : t("exportFailed");
-			flashStatus(msg);
+			toast.error(msg, { id: toastId });
 			chrome.runtime.sendMessage("setIconState:idle");
 		}
 	};
 
 	const exportLocalMarkdown = async (): Promise<void> => {
 		setExporting(true);
-		setStatusLabel(t("exporting"));
+		const toastId = toast.loading(t("exporting"));
 		chrome.runtime.sendMessage("setIconState:exporting");
 		try {
 			const markdown = await getBookmarksMarkdownContent();
 			const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-			downloadBlob(timestampedFilename("md"), blob);
+			downloadBlob(timestampedFilename("md"), blob, toastId);
 		} catch (err) {
 			setExporting(false);
 			const msg = err instanceof Error ? err.message : t("exportFailed");
-			flashStatus(msg);
+			toast.error(msg, { id: toastId });
 			chrome.runtime.sendMessage("setIconState:idle");
 		}
 	};
@@ -184,9 +184,6 @@ function Bookmarkr(): React.ReactElement {
 					<h1 className="text-xl font-semibold">{t("extensionName")}</h1>
 				</div>
 				<div className="flex flex-col gap-2">
-					{statusLabel && (
-						<div className="text-sm text-muted-foreground text-center">{statusLabel}</div>
-					)}
 					<Button
 						className="w-full"
 						disabled={exporting}
@@ -217,6 +214,7 @@ if (!rootElement) {
 ReactDOM.createRoot(rootElement).render(
 	<React.StrictMode>
 		<PopupErrorBoundary>
+			<Toaster position="top-center" richColors />
 			<Bookmarkr />
 		</PopupErrorBoundary>
 	</React.StrictMode>,
